@@ -176,17 +176,26 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         private Dictionary<UUID, float> m_loadBearingLimit = new Dictionary<UUID, float>();
 
-        public int tsuccirSetLoadBearingLimit(UUID host, UUID script, UUID agent, float limit)
+        /// <summary>
+        /// Sets the load bearing limit for the specified avatar.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="agent"></param>
+        /// <param name="limit"></param>
+        /// <returns></returns>
+        public int tsuccirSetLoadBearingLimit(UUID hostID, UUID script,
+                string agent, float limit)
         {
-            SceneObjectPart hostPart = null;
-            if (!m_scene.TryGetSceneObjectPart(host, out hostPart))
+            SceneObjectPart host = null;
+            if (!m_scene.TryGetSceneObjectPart(hostID, out host))
             {
                 ScriptError(host, "unknown", new Vector3(m_scene.Center), "Could not set load bearing limit, originating prim could not be found.");
                 return 0;
             }
 
             TaskInventoryItem scriptItem = null;
-            if (!hostPart.TaskInventory.TryGetValue(script, out scriptItem))
+            if (!host.TaskInventory.TryGetValue(script, out scriptItem))
             {
                 ScriptError(hostPart, "Could not set load bearing limit, script not found.");
                 return 0;
@@ -194,7 +203,7 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             if (scriptItem.OwnerID != m_scene.RegionInfo.EstateSettings.EstateOwner)
             {
-                LandData parcel = m_scene.GetLandData(hostPart.AbsolutePosition);
+                LandData parcel = m_scene.GetLandData(host.AbsolutePosition);
                 if (parcel == null)
                 {
                     ScriptError(hostPart, "Could not set load bearing limit, parcel could not be found.");
@@ -207,21 +216,56 @@ namespace TeessideUniversity.CCIR.OpenSim
                 }
             }
 
+            UUID agentID;
+            if (!UUID.TryParse(agent, out agentID))
+            {
+                ScriptError(host,
+                        "Could not set load bearing limit," +
+                        " invalid agent key.");
+                return 0;
+            }
+
             ScenePresence agentPresence = null;
-            if (!m_scene.TryGetScenePresence(agent, out agentPresence))
+            if (!m_scene.TryGetScenePresence(agentID, out agentPresence))
             {
                 ScriptError(hostPart, "Could not set load bearing limit, agent not found.");
                 return 0;
             }
 
-            m_loadBearingLimit[agent] = limit;
+            m_loadBearingLimits[agentID] = limit;
             return 1;
         }
 
-        public float tsuccirGetLoadBearingLimit(UUID host, UUID script, UUID agent)
+        /// <summary>
+        /// Gets the load bearing limit of the specified avatar.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="agent"></param>
+        /// <returns></returns>
+        public float tsuccirGetLoadBearingLimit(UUID hostID, UUID script,
+                string agent)
         {
-            if(m_loadBearingLimit.ContainsKey(agent))
-                return m_loadBearingLimit[agent];
+            UUID agentID;
+            if (!UUID.TryParse(agent, out agentID))
+            {
+                string errorMsg = "Could not set attachment points as being" +
+                        " occupied, agent key was invalid.";
+                SceneObjectPart host = null;
+                if (!m_scene.TryGetSceneObjectPart(hostID, out host))
+                {
+                    ScriptError(host, errorMsg);
+                }
+                else
+                {
+                    ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                            errorMsg);
+                }
+                return 0;
+            }
+
+            if (m_loadBearingLimits.ContainsKey(agentID))
+                return m_loadBearingLimits[agentID];
             else
                 return 0;
         }
