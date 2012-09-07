@@ -122,7 +122,10 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             m_scriptModuleComms.RegisterScriptInvocation(this, new string[]{
                 "tsuccirSetLoadBearingLimit",
-                "tsuccirGetLoadBearingLimit"
+                "tsuccirGetLoadBearingLimit",
+                "tsuccirSetAttachmentPointsAsOccupied",
+                "tsuccirSetAttachmentPointsAsUnoccupied",
+                "tsuccirIsAttachmentPointOccupied"
             });
 
             m_scene.EventManager.OnRemovePresence += EventManager_OnRemovePresence;
@@ -221,6 +224,204 @@ namespace TeessideUniversity.CCIR.OpenSim
                 return m_loadBearingLimit[agent];
             else
                 return 0;
+        }
+
+        #endregion
+
+        #region occupied attachment points
+
+        private Dictionary<UUID, List<int>> m_occupiedAttachPoints = new Dictionary<UUID, List<int>>();
+
+        /// <summary>
+        /// Ensures <seealso cref="m_occupiedAttachPoints"/> is initialised
+        /// for the scene presence before adding to the list.
+        /// </summary>
+        /// <param name="presence"></param>
+        private void InitOccupiedAttachmentPoints(ScenePresence presence)
+        {
+            if (!m_occupiedAttachPoints.ContainsKey(presence.UUID))
+            {
+                m_occupiedAttachPoints[presence.UUID] = new List<int>();
+            }
+        }
+
+        /// <summary>
+        /// Deduplicates the code for validating the hostID & agent key
+        /// params.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="agent"></param>
+        /// <param name="requireMatchingAttachment"></param>
+        /// <returns></returns>
+        private ScenePresence GetPresenceForOccupiedAttachmentOp(
+                UUID hostID, string agent, bool requireMatchingAttachment)
+        {
+            SceneObjectPart host = null;
+            if (!m_scene.TryGetSceneObjectPart(hostID, out host))
+            {
+                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                        "Host object disappeared.");
+                return null;
+            }
+
+            if (requireMatchingAttachment && !host.ParentGroup.IsAttachment)
+            {
+                ScriptError(host, "Host object is not an attachment.");
+                return null;
+            }
+
+            UUID agentID;
+            if (!UUID.TryParse(agent, out agentID))
+            {
+                ScriptError(host, "Agent key was invalid.");
+                return null;
+            }
+
+            ScenePresence agentPresence;
+            if (!m_scene.TryGetScenePresence(agentID, out agentPresence))
+            {
+                ScriptError(host, "Could not find agent.");
+                return null;
+            }
+
+            if (requireMatchingAttachment &&
+                    host.OwnerID != agentPresence.UUID)
+            {
+                ScriptError(host,
+                        "An agent's attachments can only mark attachment" +
+                        " points as being occupied for their own avatar.");
+                return null;
+            }
+
+            return agentPresence;
+        }
+
+        /// <summary>
+        /// Marks attachment points as being occupied.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="agent"></param>
+        /// <param name="attachmentPointList">Should be a list of attachment points.</param>
+        /// <returns></returns>
+        public int tsuccirSetAttachmentPointsAsOccupied(UUID hostID,
+                UUID script, string agent, object[] attachmentPointList)
+        {
+            ScenePresence presence = GetPresenceForOccupiedAttachmentOp(
+                    hostID, agent, true);
+
+            if (presence == null)
+                return 0;
+
+            int[] attachmentPoints = new List<object>(
+                    attachmentPointList).ConvertAll<int>(x =>
+                    {
+                        return ((x is int || x is uint) &&
+                                (int)x >= 0) ? (int)x : 0;
+                    }).ToArray();
+
+            foreach (int point in attachmentPoints)
+            {
+                switch (point)
+                {
+                    case ScriptBaseClass.ATTACH_CHEST:
+                    case ScriptBaseClass.ATTACH_HEAD:
+                    case ScriptBaseClass.ATTACH_LSHOULDER:
+                    case ScriptBaseClass.ATTACH_RSHOULDER:
+                    case ScriptBaseClass.ATTACH_LHAND:
+                    case ScriptBaseClass.ATTACH_RHAND:
+                    case ScriptBaseClass.ATTACH_LFOOT:
+                    case ScriptBaseClass.ATTACH_RFOOT:
+                    case ScriptBaseClass.ATTACH_BACK:
+                    case ScriptBaseClass.ATTACH_PELVIS:
+                    case ScriptBaseClass.ATTACH_MOUTH:
+                    case ScriptBaseClass.ATTACH_CHIN:
+                    case ScriptBaseClass.ATTACH_LEAR:
+                    case ScriptBaseClass.ATTACH_REAR:
+                    case ScriptBaseClass.ATTACH_LEYE:
+                    case ScriptBaseClass.ATTACH_REYE:
+                    case ScriptBaseClass.ATTACH_NOSE:
+                    case ScriptBaseClass.ATTACH_RUARM:
+                    case ScriptBaseClass.ATTACH_RLARM:
+                    case ScriptBaseClass.ATTACH_LUARM:
+                    case ScriptBaseClass.ATTACH_LLARM:
+                    case ScriptBaseClass.ATTACH_RHIP:
+                    case ScriptBaseClass.ATTACH_RULEG:
+                    case ScriptBaseClass.ATTACH_RLLEG:
+                    case ScriptBaseClass.ATTACH_LHIP:
+                    case ScriptBaseClass.ATTACH_LULEG:
+                    case ScriptBaseClass.ATTACH_LLLEG:
+                    case ScriptBaseClass.ATTACH_BELLY:
+                    case ScriptBaseClass.ATTACH_LEFT_PEC:
+                    case ScriptBaseClass.ATTACH_RIGHT_PEC:
+                        InitOccupiedAttachmentPoints(presence);
+                        if (!m_occupiedAttachPoints[presence.UUID].Contains(
+                                point))
+                        {
+                            m_occupiedAttachPoints[presence.UUID].Add(point);
+                        }
+                        break;
+                }
+            }
+
+            return 1;
+        }
+
+        /// <summary>
+        /// Marks attachment points as being unoccupied.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="agent"></param>
+        /// <param name="attachmentPointList"></param>
+        /// <returns></returns>
+        public int tsuccirSetAttachmentPointsAsUnoccupied(UUID hostID,
+                UUID script, string agent, object[] attachmentPointList)
+        {
+            ScenePresence presence =
+                    GetPresenceForOccupiedAttachmentOp(hostID, agent, true);
+
+            if (presence == null)
+                return 0;
+            else if (!m_occupiedAttachPoints.ContainsKey(presence.UUID))
+                return 1;
+
+            List<int> attachmentPoints = new List<object>(
+                    attachmentPointList).ConvertAll<int>(x =>
+                    {
+                        return ((x is int || x is uint) &&
+                                (int)x >= 0) ? (int)x : 0;
+                    });
+
+            m_occupiedAttachPoints[presence.UUID].RemoveAll(x =>
+            {
+                return attachmentPoints.Contains(x);
+            });
+
+            return 1;
+        }
+
+        /// <summary>
+        /// Determine if a given attachment point is occupied.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="agent"></param>
+        /// <param name="attachmentPoint"></param>
+        /// <returns></returns>
+        public int tsuccirIsAttachmentPointOccupied(UUID hostID, UUID script,
+                string agent, int attachmentPoint)
+        {
+            ScenePresence presence =
+                    GetPresenceForOccupiedAttachmentOp(hostID, agent, true);
+
+            if (presence == null)
+                return 0;
+
+            InitOccupiedAttachmentPoints(presence);
+
+            return m_occupiedAttachPoints[presence.UUID].Contains(
+                    attachmentPoint) ? 1 : 0;
         }
 
         #endregion
