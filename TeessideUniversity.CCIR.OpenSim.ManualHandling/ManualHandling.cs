@@ -68,12 +68,13 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         #region logging
 
-        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
+        private static readonly ILog m_log = LogManager.GetLogger(
+                MethodBase.GetCurrentMethod().DeclaringType);
 
         #endregion
 
         private Scene m_scene;
-        private IScriptModuleComms m_scriptModuleComms;
+        private IScriptModuleComms m_modComms;
 
         bool m_enabled = false;
 
@@ -94,7 +95,8 @@ namespace TeessideUniversity.CCIR.OpenSim
                 m_enabled = (conf != null && conf.GetBoolean(Name, false));
             }
 
-            m_log.Info("[TSU.CCIR." + Name + "]: " + (m_enabled ? "Enabled" : "Disabled"));
+            m_log.Info("[TSU.CCIR." + Name + "]: " +
+                    (m_enabled ? "Enabled" : "Disabled"));
         }
 
         public void AddRegion(Scene scene)
@@ -112,15 +114,17 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             m_scene = scene;
 
-            m_scriptModuleComms = scene.RequestModuleInterface<IScriptModuleComms>();
+            m_modComms = scene.RequestModuleInterface<IScriptModuleComms>();
 
-            if (m_scriptModuleComms == null)
+            if (m_modComms == null)
             {
-                m_log.Error("IScriptModuleComms could not be found, cannot add script functions");
+                m_log.Error(
+                        "IScriptModuleComms could not be found, cannot add" +
+                        " script functions");
                 return;
             }
 
-            m_scriptModuleComms.RegisterScriptInvocation(this, new string[]{
+            m_modComms.RegisterScriptInvocation(this, new string[]{
                 "tsuccirSetLoadBearingLimit",
                 "tsuccirGetLoadBearingLimit",
                 "tsuccirSetAttachmentPointsAsOccupied",
@@ -128,8 +132,8 @@ namespace TeessideUniversity.CCIR.OpenSim
                 "tsuccirIsAttachmentPointOccupied"
             });
 
-            m_scene.EventManager.OnRemovePresence += EventManager_OnRemovePresence;
-            m_scene.EventManager.OnNewPresence += EventManager_OnNewPresence;
+            m_scene.EventManager.OnRemovePresence += OnRemovePresence;
+            m_scene.EventManager.OnNewPresence += OnNewPresence;
         }
 
         public void Close()
@@ -143,6 +147,24 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         #endregion
 
+        #region Event Handlers
+
+        void OnRemovePresence(UUID agentId)
+        {
+            m_loadBearingLimits.Remove(agentId);
+            m_occupiedAttachPoints.Remove(agentId);
+        }
+
+        void OnNewPresence(ScenePresence presence)
+        {
+            if (presence.PresenceType == PresenceType.User)
+            {
+                m_loadBearingLimits[presence.UUID] = 0.0f;
+            }
+        }
+
+        #endregion
+
         #region OSSL
 
         private void ScriptError(SceneObjectPart origin, string msg)
@@ -150,31 +172,16 @@ namespace TeessideUniversity.CCIR.OpenSim
             ScriptError(origin.UUID, origin.Name, origin.AbsolutePosition, msg);
         }
 
-        private void ScriptError(UUID origin, string originName, Vector3 pos, string msg)
+        private void ScriptError(UUID origin, string originName, Vector3 pos,
+                string msg)
         {
-            m_scene.SimChat(msg, ChatTypeEnum.DebugChannel, pos, originName, origin, false);
+            m_scene.SimChat(msg, ChatTypeEnum.DebugChannel, pos, originName,
+                    origin, false);
         }
-
-        #region Event Handlers
-
-        void EventManager_OnRemovePresence(UUID agentId)
-        {
-            m_loadBearingLimit.Remove(agentId);
-        }
-
-        void EventManager_OnNewPresence(ScenePresence presence)
-        {
-            if(presence.PresenceType == PresenceType.User)
-            {
-                m_loadBearingLimit[presence.UUID] = 0.0f;
-            }
-        }
-
-        #endregion
 
         #region weight limits
 
-        private Dictionary<UUID, float> m_loadBearingLimit = new Dictionary<UUID, float>();
+        private Dictionary<UUID, float> m_loadBearingLimits = new Dictionary<UUID, float>();
 
         /// <summary>
         /// Sets the load bearing limit for the specified avatar.
@@ -190,28 +197,37 @@ namespace TeessideUniversity.CCIR.OpenSim
             SceneObjectPart host = null;
             if (!m_scene.TryGetSceneObjectPart(hostID, out host))
             {
-                ScriptError(host, "unknown", new Vector3(m_scene.Center), "Could not set load bearing limit, originating prim could not be found.");
+                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                        "Could not set load bearing limit, originating prim" +
+                        " could not be found.");
                 return 0;
             }
 
             TaskInventoryItem scriptItem = null;
             if (!host.TaskInventory.TryGetValue(script, out scriptItem))
             {
-                ScriptError(hostPart, "Could not set load bearing limit, script not found.");
+                ScriptError(host,
+                        "Could not set load bearing limit," +
+                        " script not found.");
                 return 0;
             }
 
-            if (scriptItem.OwnerID != m_scene.RegionInfo.EstateSettings.EstateOwner)
+            if (scriptItem.OwnerID !=
+                    m_scene.RegionInfo.EstateSettings.EstateOwner)
             {
                 LandData parcel = m_scene.GetLandData(host.AbsolutePosition);
                 if (parcel == null)
                 {
-                    ScriptError(hostPart, "Could not set load bearing limit, parcel could not be found.");
+                    ScriptError(host,
+                            "Could not set load bearing limit, parcel could" +
+                            " not be found.");
                     return 0;
                 }
                 else if (scriptItem.OwnerID != parcel.OwnerID)
                 {
-                    ScriptError(hostPart, "Could not set load bearing limit, script owner does not match estate owner or parcel owner.");
+                    ScriptError(host,
+                            "Could not set load bearing limit, script owner" +
+                            " does not match estate owner or parcel owner.");
                     return 0;
                 }
             }
@@ -228,7 +244,8 @@ namespace TeessideUniversity.CCIR.OpenSim
             ScenePresence agentPresence = null;
             if (!m_scene.TryGetScenePresence(agentID, out agentPresence))
             {
-                ScriptError(hostPart, "Could not set load bearing limit, agent not found.");
+                ScriptError(host,
+                        "Could not set load bearing limit, agent not found.");
                 return 0;
             }
 
