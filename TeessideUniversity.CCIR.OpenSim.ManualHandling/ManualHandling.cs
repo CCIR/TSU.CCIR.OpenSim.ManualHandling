@@ -50,7 +50,7 @@ using LSL_String = OpenSim.Region.ScriptEngine.Shared.LSL_Types.LSLString;
 using LSL_Vector = OpenSim.Region.ScriptEngine.Shared.LSL_Types.Vector3;
 
 [assembly: Addin("ManualHandling", "0.1")]
-[assembly: AddinDependency("OpenSim", "0.5")]
+[assembly: AddinDependency("OpenSim", "0.7.5")]
 
 namespace TeessideUniversity.CCIR.OpenSim
 {
