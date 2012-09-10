@@ -465,7 +465,7 @@ namespace TeessideUniversity.CCIR.OpenSim
                 string agent, object[] attachmentPointList)
         {
             ScenePresence presence =
-                    GetPresenceForOccupiedAttachmentOp(hostID, agent, true);
+                    GetPresenceForOccupiedAttachmentOp(hostID, agent, false);
 
             if (presence == null)
                 return 0;
