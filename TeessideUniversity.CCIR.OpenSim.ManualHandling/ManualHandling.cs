@@ -462,7 +462,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="attachmentPoint"></param>
         /// <returns></returns>
         public int tsuccirAreAttachmentPointsOccupied(UUID hostID, UUID script,
-                string agent, int attachmentPoint)
+                string agent, object[] attachmentPointList)
         {
             ScenePresence presence =
                     GetPresenceForOccupiedAttachmentOp(hostID, agent, true);
@@ -472,8 +472,16 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             InitOccupiedAttachmentPoints(presence);
 
-            return m_occupiedAttachPoints[presence.UUID].Contains(
-                    attachmentPoint) ? 1 : 0;
+            List<int> attachmentPoints = LSLUtil.TypedList<int>(
+                    attachmentPointList, 0);
+
+            foreach (int attachmentPoint in attachmentPointList)
+            {
+                if (m_occupiedAttachPoints[presence.UUID].Contains(
+                        attachmentPoint))
+                    return 1;
+            }
+            return 0;
         }
 
         #endregion
