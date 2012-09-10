@@ -365,12 +365,8 @@ namespace TeessideUniversity.CCIR.OpenSim
             if (presence == null)
                 return 0;
 
-            int[] attachmentPoints = new List<object>(
-                    attachmentPointList).ConvertAll<int>(x =>
-                    {
-                        return ((x is int || x is uint) &&
-                                (int)x >= 0) ? (int)x : 0;
-                    }).ToArray();
+            List<int> attachmentPoints = LSLUtil.TypedList<int>(
+                    attachmentPointList, 0);
 
             foreach (int point in attachmentPoints)
             {
@@ -438,12 +434,8 @@ namespace TeessideUniversity.CCIR.OpenSim
             else if (!m_occupiedAttachPoints.ContainsKey(presence.UUID))
                 return 1;
 
-            List<int> attachmentPoints = new List<object>(
-                    attachmentPointList).ConvertAll<int>(x =>
-                    {
-                        return ((x is int || x is uint) &&
-                                (int)x >= 0) ? (int)x : 0;
-                    });
+            List<int> attachmentPoints = LSLUtil.TypedList<int>(
+                    attachmentPointList, 0);
 
             m_occupiedAttachPoints[presence.UUID].RemoveAll(x =>
             {
