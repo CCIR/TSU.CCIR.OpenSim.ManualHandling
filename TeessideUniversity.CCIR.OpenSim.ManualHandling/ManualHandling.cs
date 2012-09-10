@@ -120,7 +120,7 @@ namespace TeessideUniversity.CCIR.OpenSim
                 "tsuccirGetLoadBearingLimit",
                 "tsuccirSetAttachmentPointsAsOccupied",
                 "tsuccirSetAttachmentPointsAsUnoccupied",
-                "tsuccirIsAttachmentPointOccupied"
+                "tsuccirAreAttachmentPointsOccupied"
             });
 
             m_scene.EventManager.OnRemovePresence += OnRemovePresence;
@@ -461,7 +461,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="agent"></param>
         /// <param name="attachmentPoint"></param>
         /// <returns></returns>
-        public int tsuccirIsAttachmentPointOccupied(UUID hostID, UUID script,
+        public int tsuccirAreAttachmentPointsOccupied(UUID hostID, UUID script,
                 string agent, int attachmentPoint)
         {
             ScenePresence presence =
