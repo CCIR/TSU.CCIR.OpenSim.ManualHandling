@@ -54,18 +54,9 @@ using LSL_Vector = OpenSim.Region.ScriptEngine.Shared.LSL_Types.Vector3;
 
 namespace TeessideUniversity.CCIR.OpenSim
 {
-    enum foo
-    {
-        bar,
-        baz,
-        bat
-    }
-
     [Extension(Path = "/OpenSim/RegionModules", NodeName = "RegionModule", Id = "ManualHandling")]
     class ManualHandling : INonSharedRegionModule
     {
-        const int bag = (int)foo.bar;
-
         #region logging
 
         private static readonly ILog m_log = LogManager.GetLogger(
