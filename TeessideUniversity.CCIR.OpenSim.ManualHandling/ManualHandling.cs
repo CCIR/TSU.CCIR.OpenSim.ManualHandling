@@ -176,6 +176,11 @@ namespace TeessideUniversity.CCIR.OpenSim
         private Dictionary<UUID, float> m_loadBearingLimits = new Dictionary<UUID, float>();
 
         /// <summary>
+        /// Stores the custom mass of each object. Values are in Kilograms.
+        /// </summary>
+        private Dictionary<UUID, float> m_objectMass = new Dictionary<UUID, float>();
+
+        /// <summary>
         /// Sets the load bearing limit for the specified avatar.
         /// </summary>
         /// <param name="hostID"></param>
@@ -277,6 +282,165 @@ namespace TeessideUniversity.CCIR.OpenSim
                 return m_loadBearingLimits[agentID];
             else
                 return 0;
+        }
+
+        private bool SetMass(SceneObjectPart sop, float mass)
+        {
+            m_objectMass[sop.ParentGroup.UUID] = mass;
+            return true;
+        }
+
+        /// <summary>
+        /// Lets the object set it's own mass.
+        /// </summary>
+        /// <remarks>
+        /// This is not intended to affect the physics engine.
+        /// Will not update the mass of objects cloned from this object.
+        /// </remarks>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="mass"></param>
+        /// <returns></returns>
+        public int tsuccirSetMass(UUID hostID, UUID script, float mass)
+        {
+            SceneObjectPart sop;
+            if (!m_scene.TryGetSceneObjectPart(hostID, out sop))
+            {
+                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                        "Cannot set mass on non-existant object.");
+                return 0;
+            }
+            return SetMass(sop, mass) ? 1 : 0;
+        }
+
+        /// <summary>
+        /// Sets the mass of another object.
+        /// </summary>
+        /// <remarks>
+        /// Will only succeed on objects that are:
+        /// * In the scene
+        /// * This object or rezzed by this object
+        /// </remarks>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="objectKey"></param>
+        /// <param name="mass"></param>
+        /// <returns></returns>
+        public int tsuccirSetMass(UUID hostID, UUID script, string objectKey, float mass)
+        {
+            UUID objectID = UUID.Zero;
+            SceneObjectPart sop;
+            if (!UUID.TryParse(objectKey, out objectID))
+            {
+                ScriptError(hostID, "unknown", new Vector3(m_scene.Center), "Object key is not valid.");
+                return 0;
+            }
+            else if (!m_scene.TryGetSceneObjectPart(objectID, out sop))
+            {
+                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                        "Cannot set mass on non-existant object.");
+                return 0;
+            }
+            else if (hostID != sop.UUID)
+            {
+                SceneObjectPart host;
+                if (!m_scene.TryGetSceneObjectPart(hostID, out host))
+                {
+                    ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                            "Cannot get host object.");
+                    return 0;
+                }
+                else if (sop.ParentGroup.FromPartID != host.UUID)
+                {
+                    bool valid = false;
+                    foreach (SceneObjectPart hostChild in host.ParentGroup.Parts)
+                    {
+                        if (sop.ParentGroup.FromPartID == hostChild.UUID)
+                        {
+                            valid = true;
+                            break;
+                        }
+                    }
+                    if (!valid)
+                    {
+                        ScriptError(host,
+                                "Cannot set the mass of other objects if" +
+                                " this object did not rez it.");
+                        return 0;
+                    }
+                }
+            }
+            return SetMass(sop, mass) ? 1 : 0;
+        }
+
+        private float GetMass(UUID hostID)
+        {
+            if (hostID != UUID.Zero)
+            {
+                if (m_objectMass.ContainsKey(hostID))
+                {
+                    return m_objectMass[hostID];
+                }
+                else
+                {
+                    SceneObjectPart sop;
+                    bool storeParent = false;
+                    UUID parentID = UUID.Zero;
+                    while (m_scene.TryGetSceneObjectPart(hostID, out sop))
+                    {
+                        if (parentID == UUID.Zero)
+                            parentID = sop.ParentGroup.UUID;
+
+                        if (m_objectMass.ContainsKey(sop.ParentGroup.UUID))
+                        {
+                            if (storeParent)
+                            {
+                                m_objectMass[parentID] =
+                                        m_objectMass[sop.ParentGroup.UUID];
+                            }
+                            return m_objectMass[sop.ParentGroup.UUID];
+                        }
+                        else if (sop.ParentGroup.FromPartID != UUID.Zero)
+                        {
+                            storeParent = true;
+                            hostID = sop.ParentGroup.FromPartID;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return 0.0f;
+        }
+
+        /// <summary>
+        /// Gets the current object mass
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <returns></returns>
+        public float tsuccirGetMass(UUID hostID, UUID script)
+        {
+            return GetMass(hostID);
+        }
+
+        /// <summary>
+        /// Gets the mass of another object.
+        /// </summary>
+        /// <param name="hostID"></param>
+        /// <param name="script"></param>
+        /// <param name="objectKey"></param>
+        /// <returns></returns>
+        public float tsuccirGetMass(UUID hostID, UUID script, string objectKey)
+        {
+            UUID objectID;
+            if (!UUID.TryParse(objectKey, out objectID))
+                return 0.0f;
+            else
+                return GetMass(objectID);
         }
 
         #endregion
