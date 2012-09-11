@@ -51,6 +51,7 @@ using LSL_Vector = OpenSim.Region.ScriptEngine.Shared.LSL_Types.Vector3;
 
 [assembly: Addin("ManualHandling", "0.1")]
 [assembly: AddinDependency("OpenSim", "0.7.5")]
+[assembly: AddinDependency("TSU.CCIR.OpenSim.LSL", "0.1")]
 
 namespace TeessideUniversity.CCIR.OpenSim
 {
@@ -78,7 +79,7 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         public void Initialise(IConfigSource config)
         {
-            IConfig conf = config.Configs["TSU.CCIR.OSSL"];
+            IConfig conf = config.Configs["TSU.CCIR.OpenSim"];
 
             m_enabled = (conf != null && conf.GetBoolean("Enabled", false));
             if (m_enabled)
