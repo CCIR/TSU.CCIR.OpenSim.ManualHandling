@@ -193,6 +193,9 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         #region weight limits
 
+        /// <summary>
+        /// Stores the load bearing limit of each avatar
+        /// </summary>
         private Dictionary<UUID, float> m_loadBearingLimits = new Dictionary<UUID, float>();
 
         /// <summary>
