@@ -126,6 +126,8 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             m_scene.EventManager.OnRemovePresence += OnRemovePresence;
             m_scene.EventManager.OnNewPresence += OnNewPresence;
+            m_scene.EventManager.OnObjectBeingRemovedFromScene += OnObjectBeingRemovedFromScene;
+            m_scene.EventManager.OnAttach += OnAttach;
         }
 
         public void Close()
@@ -152,6 +154,24 @@ namespace TeessideUniversity.CCIR.OpenSim
             if (presence.PresenceType == PresenceType.User)
             {
                 m_loadBearingLimits[presence.UUID] = 0.0f;
+            }
+        }
+
+        void OnObjectBeingRemovedFromScene(SceneObjectGroup sog)
+        {
+            if (m_occupiedAttachPoints.ContainsKey(sog.OwnerID))
+                m_occupiedAttachPoints[sog.OwnerID].Remove(sog.UUID);
+        }
+
+        void OnAttach(uint localID, UUID itemID, UUID avatarID)
+        {
+            if (avatarID == UUID.Zero)
+            {
+                foreach (KeyValuePair<UUID, Dictionary<UUID, List<int>>> kvp in
+                        m_occupiedAttachPoints)
+                {
+                    kvp.Value.Remove(itemID);
+                }
             }
         }
 
