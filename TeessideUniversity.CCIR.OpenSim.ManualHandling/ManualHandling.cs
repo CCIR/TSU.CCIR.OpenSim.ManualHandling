@@ -165,6 +165,8 @@ namespace TeessideUniversity.CCIR.OpenSim
         {
             if (m_occupiedAttachPoints.ContainsKey(sog.OwnerID))
                 m_occupiedAttachPoints[sog.OwnerID].Remove(sog.UUID);
+
+            m_objectMass.Remove(sog.UUID);
         }
 
         void OnAttach(uint localID, UUID itemID, UUID avatarID)
