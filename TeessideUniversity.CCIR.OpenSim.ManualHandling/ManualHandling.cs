@@ -447,7 +447,7 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         #region occupied attachment points
 
-        private Dictionary<UUID, List<int>> m_occupiedAttachPoints = new Dictionary<UUID, List<int>>();
+        private Dictionary<UUID, Dictionary<UUID, List<int>>> m_occupiedAttachPoints = new Dictionary<UUID, Dictionary<UUID, List<int>>>();
 
         /// <summary>
         /// Ensures <seealso cref="m_occupiedAttachPoints"/> is initialised
@@ -458,7 +458,21 @@ namespace TeessideUniversity.CCIR.OpenSim
         {
             if (!m_occupiedAttachPoints.ContainsKey(presence.UUID))
             {
-                m_occupiedAttachPoints[presence.UUID] = new List<int>();
+                m_occupiedAttachPoints[presence.UUID] = new Dictionary<UUID, List<int>>();
+            }
+        }
+
+        /// <summary>
+        /// Ensures <seealso cref="m_occupiedAttachPoints"/> is initialised
+        /// for the scene presence and host ID before adding to the list.
+        /// </summary>
+        /// <param name="presence"></param>
+        private void InitOccupiedAttachmentPoints(ScenePresence presence, UUID hostID)
+        {
+            InitOccupiedAttachmentPoints(presence);
+            if (!m_occupiedAttachPoints[presence.UUID].ContainsKey(hostID))
+            {
+                m_occupiedAttachPoints[presence.UUID][hostID] = new List<int>();
             }
         }
 
@@ -530,52 +544,10 @@ namespace TeessideUniversity.CCIR.OpenSim
             if (presence == null)
                 return 0;
 
-            List<int> attachmentPoints = LSLUtil.TypedList<int>(
-                    attachmentPointList, 0);
+            InitOccupiedAttachmentPoints(presence, hostID);
 
-            foreach (int point in attachmentPoints)
-            {
-                switch (point)
-                {
-                    case ScriptBaseClass.ATTACH_CHEST:
-                    case ScriptBaseClass.ATTACH_HEAD:
-                    case ScriptBaseClass.ATTACH_LSHOULDER:
-                    case ScriptBaseClass.ATTACH_RSHOULDER:
-                    case ScriptBaseClass.ATTACH_LHAND:
-                    case ScriptBaseClass.ATTACH_RHAND:
-                    case ScriptBaseClass.ATTACH_LFOOT:
-                    case ScriptBaseClass.ATTACH_RFOOT:
-                    case ScriptBaseClass.ATTACH_BACK:
-                    case ScriptBaseClass.ATTACH_PELVIS:
-                    case ScriptBaseClass.ATTACH_MOUTH:
-                    case ScriptBaseClass.ATTACH_CHIN:
-                    case ScriptBaseClass.ATTACH_LEAR:
-                    case ScriptBaseClass.ATTACH_REAR:
-                    case ScriptBaseClass.ATTACH_LEYE:
-                    case ScriptBaseClass.ATTACH_REYE:
-                    case ScriptBaseClass.ATTACH_NOSE:
-                    case ScriptBaseClass.ATTACH_RUARM:
-                    case ScriptBaseClass.ATTACH_RLARM:
-                    case ScriptBaseClass.ATTACH_LUARM:
-                    case ScriptBaseClass.ATTACH_LLARM:
-                    case ScriptBaseClass.ATTACH_RHIP:
-                    case ScriptBaseClass.ATTACH_RULEG:
-                    case ScriptBaseClass.ATTACH_RLLEG:
-                    case ScriptBaseClass.ATTACH_LHIP:
-                    case ScriptBaseClass.ATTACH_LULEG:
-                    case ScriptBaseClass.ATTACH_LLLEG:
-                    case ScriptBaseClass.ATTACH_BELLY:
-                    case ScriptBaseClass.ATTACH_LEFT_PEC:
-                    case ScriptBaseClass.ATTACH_RIGHT_PEC:
-                        InitOccupiedAttachmentPoints(presence);
-                        if (!m_occupiedAttachPoints[presence.UUID].Contains(
-                                point))
-                        {
-                            m_occupiedAttachPoints[presence.UUID].Add(point);
-                        }
-                        break;
-                }
-            }
+            m_occupiedAttachPoints[presence.UUID][hostID] = LSLUtil.AttachPoints(
+                    attachmentPointList);
 
             return 1;
         }
@@ -602,10 +574,7 @@ namespace TeessideUniversity.CCIR.OpenSim
             List<int> attachmentPoints = LSLUtil.TypedList<int>(
                     attachmentPointList, 0);
 
-            m_occupiedAttachPoints[presence.UUID].RemoveAll(x =>
-            {
-                return attachmentPoints.Contains(x);
-            });
+            m_occupiedAttachPoints[presence.UUID].Remove(hostID);
 
             return 1;
         }
@@ -629,12 +598,15 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             InitOccupiedAttachmentPoints(presence);
 
+            if (!m_occupiedAttachPoints[presence.UUID].ContainsKey(hostID))
+                return 0;
+
             List<int> attachmentPoints = LSLUtil.TypedList<int>(
                     attachmentPointList, 0);
 
             foreach (int attachmentPoint in attachmentPointList)
             {
-                if (m_occupiedAttachPoints[presence.UUID].Contains(
+                if (m_occupiedAttachPoints[presence.UUID][hostID].Contains(
                         attachmentPoint))
                     return 1;
             }
