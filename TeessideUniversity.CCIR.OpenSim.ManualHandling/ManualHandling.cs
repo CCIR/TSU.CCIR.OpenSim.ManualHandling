@@ -119,6 +119,10 @@ namespace TeessideUniversity.CCIR.OpenSim
             m_modComms.RegisterScriptInvocation(this, new string[]{
                 "tsuccirSetLoadBearingLimit",
                 "tsuccirGetLoadBearingLimit",
+                "tsuccirSetMass",
+                "tsuccirSetObjectMass",
+                "tsuccirGetMass",
+                "tsuccirGetObjectMass",
                 "tsuccirSetAttachmentPointsAsOccupied",
                 "tsuccirSetAttachmentPointsAsUnoccupied",
                 "tsuccirAreAttachmentPointsOccupied"
@@ -349,7 +353,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="objectKey"></param>
         /// <param name="mass"></param>
         /// <returns></returns>
-        public int tsuccirSetMass(UUID hostID, UUID script, string objectKey, float mass)
+        public int tsuccirSetObjectMass(UUID hostID, UUID script, string objectKey, float mass)
         {
             UUID objectID = UUID.Zero;
             SceneObjectPart sop;
@@ -457,7 +461,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="script"></param>
         /// <param name="objectKey"></param>
         /// <returns></returns>
-        public float tsuccirGetMass(UUID hostID, UUID script, string objectKey)
+        public float tsuccirGetObjectMass(UUID hostID, UUID script, string objectKey)
         {
             UUID objectID;
             if (!UUID.TryParse(objectKey, out objectID))
