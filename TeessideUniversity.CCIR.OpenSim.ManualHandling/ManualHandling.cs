@@ -384,7 +384,8 @@ namespace TeessideUniversity.CCIR.OpenSim
                     bool valid = false;
                     foreach (SceneObjectPart hostChild in host.ParentGroup.Parts)
                     {
-                        if (sop.ParentGroup.FromPartID == hostChild.UUID)
+                        if (sop.ParentGroup.FromPartID == hostChild.UUID ||
+                                sop.ParentGroup.OriginPartID == hostChild.UUID)
                         {
                             valid = true;
                             break;
@@ -433,6 +434,11 @@ namespace TeessideUniversity.CCIR.OpenSim
                         {
                             storeParent = true;
                             hostID = sop.ParentGroup.FromPartID;
+                        }
+                        else if (sop.ParentGroup.OriginPartID != UUID.Zero)
+                        {
+                            storeParent = true;
+                            hostID = sop.ParentGroup.OriginPartID;
                         }
                         else
                         {
