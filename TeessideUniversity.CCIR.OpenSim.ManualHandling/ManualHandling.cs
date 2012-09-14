@@ -203,7 +203,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Sets the load bearing limit for the specified avatar.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="agent"></param>
         /// <param name="limit"></param>
@@ -274,7 +274,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Gets the load bearing limit of the specified avatar.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="agent"></param>
         /// <returns></returns>
@@ -319,7 +319,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// This is not intended to affect the physics engine.
         /// Will not update the mass of objects cloned from this object.
         /// </remarks>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="mass"></param>
         /// <returns></returns>
@@ -344,7 +344,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// * In the scene
         /// * This object or rezzed by this object
         /// </remarks>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="objectKey"></param>
         /// <param name="mass"></param>
@@ -357,7 +357,8 @@ namespace TeessideUniversity.CCIR.OpenSim
             SceneObjectPart sop;
             if (!UUID.TryParse(objectKey, out objectID))
             {
-                ScriptError(hostID, "unknown", new Vector3(m_scene.Center), "Object key is not valid.");
+                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                        "Object key is not valid.");
                 return 0;
             }
             else if (!m_scene.TryGetSceneObjectPart(objectID, out sop))
@@ -413,7 +414,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Gets the current object mass
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <returns></returns>
         [ScriptInvocation]
@@ -425,7 +426,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Gets the mass of another object.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="objectKey"></param>
         /// <returns></returns>
@@ -450,7 +451,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// Ensures <seealso cref="m_occupiedAttachPoints"/> is initialised
         /// for the scene presence before adding to the list.
         /// </summary>
-        /// <param name="presence"></param>
+        /// <param name="sp"></param>
         private void InitOccupiedAttachmentPoints(ScenePresence presence)
         {
             if (!m_occupiedAttachPoints.ContainsKey(presence.UUID))
@@ -463,21 +464,22 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// Ensures <seealso cref="m_occupiedAttachPoints"/> is initialised
         /// for the scene presence and host ID before adding to the list.
         /// </summary>
-        /// <param name="presence"></param>
-        private void InitOccupiedAttachmentPoints(ScenePresence presence, UUID hostID)
+        /// <param name="sp"></param>
+        private void InitOccupiedAttachmentPoints(ScenePresence presence,
+                UUID host)
         {
             InitOccupiedAttachmentPoints(presence);
-            if (!m_occupiedAttachPoints[presence.UUID].ContainsKey(hostID))
+            if (!m_occupiedAttachPoints[presence.UUID].ContainsKey(host))
             {
-                m_occupiedAttachPoints[presence.UUID][hostID] = new List<int>();
+                m_occupiedAttachPoints[presence.UUID][host] = new List<int>();
             }
         }
 
         /// <summary>
-        /// Deduplicates the code for validating the hostID & agent key
+        /// Deduplicates the code for validating the host & agent key
         /// params.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="agent"></param>
         /// <param name="requireMatchingAttachment"></param>
         /// <returns></returns>
@@ -527,24 +529,26 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Marks attachment points as being occupied.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="agent"></param>
-        /// <param name="attachmentPointList">Should be a list of attachment points.</param>
+        /// <param name="attachmentPointList">
+        /// Should be a list of attachment points.
+        /// </param>
         /// <returns></returns>
         [ScriptInvocation]
         public int tsuccirSetAttachmentPointsAsOccupied(UUID host,
                 UUID script, string agent, object[] attachmentPointList)
         {
-            ScenePresence presence = GetPresenceForOccupiedAttachmentOp(
-                    hostID, agent, true);
+            ScenePresence sp = GetPresenceForOccupiedAttachmentOp(host, agent,
+                    true);
 
-            if (presence == null)
+            if (sp == null)
                 return 0;
 
-            InitOccupiedAttachmentPoints(presence, hostID);
+            InitOccupiedAttachmentPoints(sp, host);
 
-            m_occupiedAttachPoints[presence.UUID][hostID] = LSLUtil.AttachPoints(
+            m_occupiedAttachPoints[sp.UUID][host] = LSLUtil.AttachPoints(
                     attachmentPointList);
 
             return 1;
@@ -553,7 +557,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Marks attachment points as being unoccupied.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="agent"></param>
         /// <param name="attachmentPointList"></param>
@@ -581,7 +585,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <summary>
         /// Determine if a given attachment point is occupied.
         /// </summary>
-        /// <param name="hostID"></param>
+        /// <param name="host"></param>
         /// <param name="script"></param>
         /// <param name="agent"></param>
         /// <param name="attachmentPoint"></param>
