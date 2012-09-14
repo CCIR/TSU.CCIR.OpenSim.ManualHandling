@@ -57,7 +57,7 @@ using LSL_Vector = OpenSim.Region.ScriptEngine.Shared.LSL_Types.Vector3;
 namespace TeessideUniversity.CCIR.OpenSim
 {
     [Extension(Path = "/OpenSim/RegionModules", NodeName = "RegionModule", Id = "ManualHandling")]
-    class ManualHandling : INonSharedRegionModule
+    public class ManualHandling : INonSharedRegionModule
     {
         #region logging
 
@@ -117,17 +117,7 @@ namespace TeessideUniversity.CCIR.OpenSim
                 return;
             }
 
-            m_modComms.RegisterScriptInvocation(this, new string[]{
-                "tsuccirSetLoadBearingLimit",
-                "tsuccirGetLoadBearingLimit",
-                "tsuccirSetMass",
-                "tsuccirSetObjectMass",
-                "tsuccirGetMass",
-                "tsuccirGetObjectMass",
-                "tsuccirSetAttachmentPointsAsOccupied",
-                "tsuccirSetAttachmentPointsAsUnoccupied",
-                "tsuccirAreAttachmentPointsOccupied"
-            });
+            m_modComms.RegisterScriptInvocations(this);
 
             m_scene.EventManager.OnRemovePresence += OnRemovePresence;
             m_scene.EventManager.OnNewPresence += OnNewPresence;
@@ -218,6 +208,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="agent"></param>
         /// <param name="limit"></param>
         /// <returns></returns>
+        [ScriptInvocation]
         public int tsuccirSetLoadBearingLimit(UUID hostID, UUID script,
                 string agent, float limit)
         {
@@ -287,6 +278,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="script"></param>
         /// <param name="agent"></param>
         /// <returns></returns>
+        [ScriptInvocation]
         public float tsuccirGetLoadBearingLimit(UUID hostID, UUID script,
                 string agent)
         {
@@ -331,6 +323,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="script"></param>
         /// <param name="mass"></param>
         /// <returns></returns>
+        [ScriptInvocation]
         public int tsuccirSetMass(UUID hostID, UUID script, float mass)
         {
             SceneObjectPart sop;
@@ -356,7 +349,9 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="objectKey"></param>
         /// <param name="mass"></param>
         /// <returns></returns>
-        public int tsuccirSetObjectMass(UUID hostID, UUID script, string objectKey, float mass)
+        [ScriptInvocation]
+        public int tsuccirSetObjectMass(UUID hostID, UUID script,
+                string objectKey, float mass)
         {
             UUID objectID = UUID.Zero;
             SceneObjectPart sop;
@@ -421,6 +416,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="hostID"></param>
         /// <param name="script"></param>
         /// <returns></returns>
+        [ScriptInvocation]
         public float tsuccirGetMass(UUID hostID, UUID script)
         {
             return GetMass(hostID);
@@ -433,7 +429,9 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="script"></param>
         /// <param name="objectKey"></param>
         /// <returns></returns>
-        public float tsuccirGetObjectMass(UUID hostID, UUID script, string objectKey)
+        [ScriptInvocation]
+        public float tsuccirGetObjectMass(UUID hostID, UUID script,
+                string objectKey)
         {
             UUID objectID;
             if (!UUID.TryParse(objectKey, out objectID))
@@ -534,7 +532,8 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="agent"></param>
         /// <param name="attachmentPointList">Should be a list of attachment points.</param>
         /// <returns></returns>
-        public int tsuccirSetAttachmentPointsAsOccupied(UUID hostID,
+        [ScriptInvocation]
+        public int tsuccirSetAttachmentPointsAsOccupied(UUID host,
                 UUID script, string agent, object[] attachmentPointList)
         {
             ScenePresence presence = GetPresenceForOccupiedAttachmentOp(
@@ -559,6 +558,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="agent"></param>
         /// <param name="attachmentPointList"></param>
         /// <returns></returns>
+        [ScriptInvocation]
         public int tsuccirSetAttachmentPointsAsUnoccupied(UUID hostID,
                 UUID script, string agent, object[] attachmentPointList)
         {
@@ -586,8 +586,9 @@ namespace TeessideUniversity.CCIR.OpenSim
         /// <param name="agent"></param>
         /// <param name="attachmentPoint"></param>
         /// <returns></returns>
-        public int tsuccirAreAttachmentPointsOccupied(UUID hostID, UUID script,
-                string agent, object[] attachmentPointList)
+        [ScriptInvocation]
+        public int tsuccirAreAttachmentPointsOccupied(UUID hostID,
+                UUID script, string agent, object[] attachmentPointList)
         {
             ScenePresence presence =
                     GetPresenceForOccupiedAttachmentOp(hostID, agent, false);
