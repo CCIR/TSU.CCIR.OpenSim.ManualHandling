@@ -52,6 +52,7 @@ using LSL_Vector = OpenSim.Region.ScriptEngine.Shared.LSL_Types.Vector3;
 [assembly: Addin("ManualHandling", "0.1")]
 [assembly: AddinDependency("OpenSim", "0.7.5")]
 [assembly: AddinDependency("TSU.CCIR.OpenSim.LSL", "0.1")]
+[assembly: AddinDependency("TSU.CCIR.OpenSim.PrimDescendants", "0.1")]
 
 namespace TeessideUniversity.CCIR.OpenSim
 {
@@ -375,29 +376,18 @@ namespace TeessideUniversity.CCIR.OpenSim
                 SceneObjectPart host;
                 if (!m_scene.TryGetSceneObjectPart(hostID, out host))
                 {
-                    ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                    ScriptError(hostID, "unknown",
+                            new Vector3(m_scene.Center),
                             "Cannot get host object.");
                     return 0;
                 }
-                else if (sop.ParentGroup.FromPartID != host.UUID)
+                else if (sop.ParentGroup.FromPartID != host.UUID &&
+                        !PrimDescendants.CheckPrimDescendants(
+                        host.ParentGroup.UUID, objectID, true))
                 {
-                    bool valid = false;
-                    foreach (SceneObjectPart hostChild in host.ParentGroup.Parts)
-                    {
-                        if (sop.ParentGroup.FromPartID == hostChild.UUID ||
-                                sop.ParentGroup.OriginPartID == hostChild.UUID)
-                        {
-                            valid = true;
-                            break;
-                        }
-                    }
-                    if (!valid)
-                    {
-                        ScriptError(host,
-                                "Cannot set the mass of other objects if" +
-                                " this object did not rez it.");
-                        return 0;
-                    }
+                    ScriptError(host,
+                            "Cannot set the mass of other objects if" +
+                            " this object did not rez it.");
                 }
             }
             return SetMass(sop, mass) ? 1 : 0;
@@ -405,50 +395,24 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         private float GetMass(UUID hostID)
         {
-            if (hostID != UUID.Zero)
+            if (hostID != UUID.Zero && !m_objectMass.ContainsKey(hostID))
             {
-                if (m_objectMass.ContainsKey(hostID))
+                SceneObjectPart sop;
+                if (m_scene.TryGetSceneObjectPart(hostID, out sop))
                 {
-                    return m_objectMass[hostID];
-                }
-                else
-                {
-                    SceneObjectPart sop;
-                    bool storeParent = false;
-                    UUID parentID = UUID.Zero;
-                    while (m_scene.TryGetSceneObjectPart(hostID, out sop))
-                    {
-                        if (parentID == UUID.Zero)
-                            parentID = sop.ParentGroup.UUID;
-
-                        if (m_objectMass.ContainsKey(sop.ParentGroup.UUID))
+                    hostID = sop.ParentGroup.UUID;
+                    if (!m_objectMass.ContainsKey(hostID))
+                        foreach (UUID ancestor in
+                                PrimDescendants.GetAncestors(sop.ParentGroup))
                         {
-                            if (storeParent)
-                            {
-                                m_objectMass[parentID] =
-                                        m_objectMass[sop.ParentGroup.UUID];
-                            }
-                            return m_objectMass[sop.ParentGroup.UUID];
+                            if (m_objectMass.ContainsKey(ancestor))
+                                m_objectMass[hostID] = m_objectMass[ancestor];
                         }
-                        else if (sop.ParentGroup.FromPartID != UUID.Zero)
-                        {
-                            storeParent = true;
-                            hostID = sop.ParentGroup.FromPartID;
-                        }
-                        else if (sop.ParentGroup.OriginPartID != UUID.Zero)
-                        {
-                            storeParent = true;
-                            hostID = sop.ParentGroup.OriginPartID;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
                 }
             }
 
-            return 0.0f;
+            return m_objectMass.ContainsKey(hostID) ?
+                    m_objectMass[hostID] : 0.0f;
         }
 
         /// <summary>
