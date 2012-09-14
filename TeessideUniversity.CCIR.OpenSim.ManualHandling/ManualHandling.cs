@@ -441,6 +441,36 @@ namespace TeessideUniversity.CCIR.OpenSim
                 return GetMass(objectID);
         }
 
+        [ScriptInvocation]
+        public float tsuccirGetAvatarLoad(UUID host, UUID script,
+                string agentKey)
+        {
+            UUID agentID;
+            if (UUID.TryParse(agentKey, out agentID))
+            {
+                ScenePresence sp;
+                if (m_scene.TryGetScenePresence(agentID, out sp))
+                {
+                    float ret = 0.0f;
+                    sp.GetAttachments().ForEach(attachment =>
+                    {
+                        ret += GetMass(attachment.UUID);
+                    });
+                }
+            }
+
+            return 0.0f;
+        }
+
+        [ScriptInvocation]
+        public int tsuccirIsAvatarOverloaded(UUID host, UUID script,
+                string agentKey)
+        {
+            return (tsuccirGetAvatarLoad(host, script, agentKey) >
+                    tsuccirGetLoadBearingLimit(host, script, agentKey)) ?
+                    1 : 0;
+        }
+
         #endregion
 
         #region occupied attachment points
