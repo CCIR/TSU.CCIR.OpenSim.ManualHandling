@@ -573,8 +573,12 @@ namespace TeessideUniversity.CCIR.OpenSim
             ScenePresence sp = GetPresenceForOccupiedAttachmentOp(host, agent,
                     true);
 
-            if (sp == null)
+            SceneObjectPart sop = m_scene.GetSceneObjectPart(host);
+
+            if (sp == null || sop == null)
                 return 0;
+
+            host = sop.ParentGroup.UUID;
 
             InitOccupiedAttachmentPoints(sp, host);
 
@@ -632,18 +636,16 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             InitOccupiedAttachmentPoints(presence);
 
-            if (!m_occupiedAttachPoints[presence.UUID].ContainsKey(hostID))
-                return 0;
-
             List<int> attachmentPoints = LSLUtil.TypedList<int>(
                     attachmentPointList, 0);
 
-            foreach (int attachmentPoint in attachmentPointList)
+            foreach (KeyValuePair<UUID, List<int>> kvp in m_occupiedAttachPoints[presence.UUID])
             {
-                if (m_occupiedAttachPoints[presence.UUID][hostID].Contains(
-                        attachmentPoint))
-                    return 1;
+                foreach (int attachmentPoint in attachmentPoints)
+                    if (kvp.Value.Contains(attachmentPoint))
+                        return 1;
             }
+
             return 0;
         }
 
