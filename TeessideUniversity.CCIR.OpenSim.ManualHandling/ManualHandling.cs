@@ -215,7 +215,7 @@ namespace TeessideUniversity.CCIR.OpenSim
             SceneObjectPart host = null;
             if (!m_scene.TryGetSceneObjectPart(hostID, out host))
             {
-                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                ScriptError(hostID, "unknown", m_scene.Center,
                         "Could not set load bearing limit, originating prim" +
                         " could not be found.");
                 return 0;
@@ -294,7 +294,7 @@ namespace TeessideUniversity.CCIR.OpenSim
                 }
                 else
                 {
-                    ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                    ScriptError(hostID, "unknown", m_scene.Center,
                             errorMsg);
                 }
                 return 0;
@@ -329,7 +329,7 @@ namespace TeessideUniversity.CCIR.OpenSim
             SceneObjectPart sop;
             if (!m_scene.TryGetSceneObjectPart(hostID, out sop))
             {
-                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                ScriptError(hostID, "unknown", m_scene.Center,
                         "Cannot set mass on non-existant object.");
                 return 0;
             }
@@ -357,13 +357,13 @@ namespace TeessideUniversity.CCIR.OpenSim
             SceneObjectPart sop;
             if (!UUID.TryParse(objectKey, out objectID))
             {
-                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                ScriptError(hostID, "unknown", m_scene.Center,
                         "Object key is not valid.");
                 return 0;
             }
             else if (!m_scene.TryGetSceneObjectPart(objectID, out sop))
             {
-                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                ScriptError(hostID, "unknown", m_scene.Center,
                         "Cannot set mass on non-existant object.");
                 return 0;
             }
@@ -372,8 +372,7 @@ namespace TeessideUniversity.CCIR.OpenSim
                 SceneObjectPart host;
                 if (!m_scene.TryGetSceneObjectPart(hostID, out host))
                 {
-                    ScriptError(hostID, "unknown",
-                            new Vector3(m_scene.Center),
+                    ScriptError(hostID, "unknown", m_scene.Center,
                             "Cannot get host object.");
                     return 0;
                 }
@@ -519,7 +518,7 @@ namespace TeessideUniversity.CCIR.OpenSim
             SceneObjectPart host = null;
             if (!m_scene.TryGetSceneObjectPart(hostID, out host))
             {
-                ScriptError(hostID, "unknown", new Vector3(m_scene.Center),
+                ScriptError(hostID, "unknown", m_scene.Center,
                         "Host object disappeared.");
                 return null;
             }
