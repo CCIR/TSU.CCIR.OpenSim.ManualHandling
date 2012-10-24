@@ -73,10 +73,7 @@ namespace TeessideUniversity.CCIR.OpenSim
 
         #region INonSharedRegionModule
 
-        public string Name
-        {
-            get { return "ManualHandling"; }
-        }
+        public string Name { get { return "ManualHandling"; } }
 
         public void Initialise(IConfigSource config)
         {
@@ -84,21 +81,15 @@ namespace TeessideUniversity.CCIR.OpenSim
 
             m_enabled = (conf != null && conf.GetBoolean("Enabled", false));
             if (m_enabled)
-            {
                 m_enabled = (conf != null && conf.GetBoolean(Name, false));
-            }
 
             m_log.Info("[TSU.CCIR." + Name + "]: " +
                     (m_enabled ? "Enabled" : "Disabled"));
         }
 
-        public void AddRegion(Scene scene)
-        {
-        }
+        public void AddRegion(Scene scene) { }
 
-        public void RemoveRegion(Scene scene)
-        {
-        }
+        public void RemoveRegion(Scene scene) { }
 
         public void RegionLoaded(Scene scene)
         {
@@ -125,14 +116,9 @@ namespace TeessideUniversity.CCIR.OpenSim
             m_scene.EventManager.OnAttach += OnAttach;
         }
 
-        public void Close()
-        {
-        }
+        public void Close() { }
 
-        public Type ReplaceableInterface
-        {
-            get { return null; }
-        }
+        public Type ReplaceableInterface { get { return null; } }
 
         #endregion
 
@@ -237,15 +223,13 @@ namespace TeessideUniversity.CCIR.OpenSim
                 if (parcel == null)
                 {
                     ScriptError(host,
-                            "Could not set load bearing limit, parcel could" +
-                            " not be found.");
+                            "Could not set load bearing limit, parcel could not be found.");
                     return 0;
                 }
                 else if (scriptItem.OwnerID != parcel.OwnerID)
                 {
                     ScriptError(host,
-                            "Could not set load bearing limit, script owner" +
-                            " does not match estate owner or parcel owner.");
+                            "Cannot set load bearing limit, script owner does not match estate owner or parcel owner.");
                     return 0;
                 }
             }
@@ -254,8 +238,7 @@ namespace TeessideUniversity.CCIR.OpenSim
             if (!UUID.TryParse(agent, out agentID))
             {
                 ScriptError(host,
-                        "Could not set load bearing limit," +
-                        " invalid agent key.");
+                        "Cannot set load bearing limit, invalid agent key.");
                 return 0;
             }
 
@@ -263,7 +246,7 @@ namespace TeessideUniversity.CCIR.OpenSim
             if (!m_scene.TryGetScenePresence(agentID, out agentPresence))
             {
                 ScriptError(host,
-                        "Could not set load bearing limit, agent not found.");
+                        "Cannot set load bearing limit, agent not found.");
                 return 0;
             }
 
@@ -285,18 +268,14 @@ namespace TeessideUniversity.CCIR.OpenSim
             UUID agentID;
             if (!UUID.TryParse(agent, out agentID))
             {
-                string errorMsg = "Could not set attachment points as being" +
-                        " occupied, agent key was invalid.";
+                string errorMsg = "Could not set attachment points as being occupied, agent key was invalid.";
                 SceneObjectPart host = null;
+
                 if (!m_scene.TryGetSceneObjectPart(hostID, out host))
-                {
                     ScriptError(host, errorMsg);
-                }
                 else
-                {
-                    ScriptError(hostID, "unknown", m_scene.Center,
-                            errorMsg);
-                }
+                    ScriptError(hostID, "unknown", m_scene.Center, errorMsg);
+
                 return 0;
             }
 
