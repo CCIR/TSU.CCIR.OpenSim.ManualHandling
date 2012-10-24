@@ -70,6 +70,7 @@ namespace TeessideUniversity.CCIR.OpenSim
         private IScriptModuleComms m_modComms;
 
         bool m_enabled = false;
+        private bool m_AllowUnrestrictedScriptOwners = false;
 
         #region INonSharedRegionModule
 
@@ -82,6 +83,9 @@ namespace TeessideUniversity.CCIR.OpenSim
             m_enabled = (conf != null && conf.GetBoolean("Enabled", false));
             if (m_enabled)
                 m_enabled = (conf != null && conf.GetBoolean(Name, false));
+
+            m_AllowUnrestrictedScriptOwners =
+                    conf.GetBoolean(Name + "UnrestrictedScriptOwners", false);
 
             m_log.Info("[TSU.CCIR." + Name + "]: " +
                     (m_enabled ? "Enabled" : "Disabled"));
@@ -226,7 +230,7 @@ namespace TeessideUniversity.CCIR.OpenSim
                             "Could not set load bearing limit, parcel could not be found.");
                     return 0;
                 }
-                else if (scriptItem.OwnerID != parcel.OwnerID)
+                else if (!m_AllowUnrestrictedScriptOwners && scriptItem.OwnerID != parcel.OwnerID)
                 {
                     ScriptError(host,
                             "Cannot set load bearing limit, script owner does not match estate owner or parcel owner.");
